@@ -2,13 +2,24 @@ app:
   name: Neura Assistant
   language: vi
   log_level: INFO
+
+# LLM configuration is provider-agnostic.
+# For OpenAI-compatible APIs use protocol: openai_chat.
+# Set AI_PROVIDER, AI_API_KEY and AI_BASE_URL in .env or the shell.
 llm:
-  provider: openrouter
-  model: openai/gpt-oss-20b
-  base_url: https://openrouter.ai/api/v1
-  api_key_env: OPENROUTER_API_KEY
+  provider: ${AI_PROVIDER:-openai_compatible}
+  protocol: ${AI_PROTOCOL:-openai_chat}
+  model: ${AI_MODEL:-}
+  base_url: ${AI_BASE_URL:-}
+  api_key_env: ${AI_API_KEY_ENV:-AI_API_KEY}
+  endpoint: ${AI_ENDPOINT:-}
+  auth_type: ${AI_AUTH_TYPE:-bearer}
+  auth_header: ${AI_AUTH_HEADER:-Authorization}
+  auth_prefix: ${AI_AUTH_PREFIX:-Bearer}
   temperature: 0.2
   max_tokens: 800
+  timeout: 90
+
 voice:
   enabled: true
   wake_word: neura
@@ -21,6 +32,7 @@ voice:
     voice: vi-VN-HoaiMyNeural
     rate: +0%
     volume: +0%
+
 safety:
   require_confirmation:
     - system.shutdown
@@ -28,6 +40,7 @@ safety:
     - system.delete_file
   blocked_tools: []
   emergency_hotkey: ctrl+shift+f12
+
 ui:
   show_overlay: true
   avatar_enabled: false
