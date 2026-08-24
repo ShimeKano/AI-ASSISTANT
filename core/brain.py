@@ -1,11 +1,14 @@
 import json
 import re
+
 from core.registry import ToolResult
+from providers.llm import LLMError
 
 SYSTEM = '''You are Neura, a Vietnamese Windows assistant. Return ONLY JSON:
 {"actions":[{"tool":"tool.name","arguments":{}}],"reply":"..."}
 Use only supplied tools. Never invent tools. Prefer no action when a request is conversational.
 '''
+
 
 class Brain:
     def __init__(self, config, registry, events, conversation, llm):
@@ -15,14 +18,31 @@ class Brain:
         self.conversation.add("user", text)
         if not self.llm.enabled:
             return self.fallback(text)
-        prompt = SYSTEM + "\nTOOLS:\n" + json.dumps(self.registry.schemas(), ensure_ascii=False) + "\nHISTORY:\n" + self.conversation.text() + "\nUSER:\n" + text
-        raw = await self.llm.complete(prompt)
+
+        prompt = (
+            SYSTEM
+            + "\nTOOLS:\n"
+            + json.dumps(self.registry.schemas(), ensure_ascii=False)
+            + "\nHISTORY:\n"
+            + self.conversation.text()
+            + "\nUSER:\n"
+            + text
+        )
+        try:
+            raw = await self.llm.complete(prompt)
+        except LLMError as exc:
+            await self.events.emit("brain.error", error=str(exc))
+            return [], f"Không thể kết nối AI provider: {exc}"
+
         match = re.search(r"\{.*\}", raw, re.S)
         if not match:
             return [], raw.strip() or "Mình chưa hiểu yêu cầu."
         try:
             obj = json.loads(match.group(0))
-            actions = [a for a in obj.get("actions", []) if self.registry.has(a.get("tool", ""))]
+            actions = [
+                a for a in obj.get("actions", [])
+                if self.registry.has(a.get("tool", ""))
+            ]
             return actions, obj.get("reply", "Đã xử lý.")
         except (json.JSONDecodeError, TypeError):
             return [], "Mình chưa hiểu yêu cầu đó."
@@ -33,7 +53,7 @@ class Brain:
             return [{"tool": "youtube.search", "arguments": {"query": ""}}], "Mình mở YouTube cho bạn."
         if "word" in t and "mở" in t:
             return [{"tool": "word.open", "arguments": {}}], "Mình mở Word cho bạn."
-        return [], "Mình đang ở chế độ offline. Hãy cấu hình OpenRouter hoặc Ollama để dùng hội thoại tự nhiên."
+        return [], "Mình đang ở chế độ offline. Hãy cấu hình một LLM provider trong config.yaml hoặc biến môi trường."
 
     async def handle(self, text, context):
         await self.events.emit("brain.thinking", text=text)
