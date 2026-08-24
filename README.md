@@ -28,7 +28,9 @@ Microphone -> STT -> Brain/Planner -> SafetyController -> ToolRegistry
 
 ## Current implementation
 
-- OpenRouter and Ollama LLM providers.
+- Provider-agnostic LLM client with OpenAI-compatible Chat Completions support.
+- OpenAI-compatible providers can be selected with only base URL, model and API key.
+- Native Ollama protocol remains supported for local models.
 - Tool registry with schemas and risk metadata.
 - Conversation memory and event bus.
 - Windows app launcher, mouse click, typing, keyboard shortcuts and media keys.
@@ -47,26 +49,55 @@ Use Python 3.11+:
 
 ```powershell
 py -3.11 -m venv .venv
-.venv\Scripts\activate
+.venv\\Scripts\\activate
 python -m pip install -U pip
 pip install -r requirements.txt
 ```
 
-Set an OpenRouter key:
+## Configure any supported LLM provider
+
+The application no longer requires `OPENROUTER_API_KEY`. Configure an OpenAI-compatible API through environment variables. Copy `.env.example` to `.env` and fill in your provider's values. `.env` is ignored by Git.
+
+Example for an OpenAI-compatible service:
 
 ```powershell
-$env:OPENROUTER_API_KEY="YOUR_KEY"
+$env:AI_PROVIDER="openai_compatible"
+$env:AI_PROTOCOL="openai_chat"
+$env:AI_API_KEY="YOUR_KEY"
+$env:AI_BASE_URL="https://api.example.com/v1"
+$env:AI_MODEL="YOUR_MODEL"
 python main.py
 ```
 
-Or use Ollama by changing `config.yaml` to `provider: ollama` and setting its local URL/model.
+For OpenRouter, use its OpenAI-compatible endpoint:
+
+```powershell
+$env:AI_PROVIDER="openrouter"
+$env:AI_PROTOCOL="openai_chat"
+$env:AI_API_KEY="YOUR_KEY"
+$env:AI_BASE_URL="https://openrouter.ai/api/v1"
+$env:AI_MODEL="YOUR_MODEL"
+python main.py
+```
+
+For Ollama:
+
+```powershell
+$env:AI_PROVIDER="ollama"
+$env:AI_PROTOCOL="ollama"
+$env:AI_BASE_URL="http://127.0.0.1:11434"
+$env:AI_MODEL="llama3.2"
+python main.py
+```
+
+The important part is that `main.py` no longer knows or cares which provider is being used. Provider-specific behavior lives in `providers/llm.py`.
 
 ## Vision prerequisites
 
 `pytesseract` is only the Python bridge. Install Tesseract OCR on Windows and optionally set:
 
 ```powershell
-$env:TESSERACT_CMD="C:\Program Files\Tesseract-OCR\tesseract.exe"
+$env:TESSERACT_CMD="C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 ```
 
 ## Voice
