@@ -1,10 +1,10 @@
-import asyncio
 import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
+from dotenv import load_dotenv
 
 from core.registry import ToolRegistry
 from core.events import EventBus
@@ -41,6 +41,9 @@ class Context:
 
 class Application:
     def __init__(self):
+        # Load local secrets without putting them into the repository.
+        load_dotenv(Path(".env"), override=False)
+
         config_path = Path("config.yaml")
         raw_config = config_path.read_text(encoding="utf-8")
         config = yaml.safe_load(_expand_env(raw_config)) or {}
