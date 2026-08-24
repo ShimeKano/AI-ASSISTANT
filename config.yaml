@@ -1,0 +1,33 @@
+app:
+  name: Neura Assistant
+  language: vi
+  log_level: INFO
+llm:
+  provider: openrouter
+  model: openai/gpt-oss-20b
+  base_url: https://openrouter.ai/api/v1
+  api_key_env: OPENROUTER_API_KEY
+  temperature: 0.2
+  max_tokens: 800
+voice:
+  enabled: true
+  wake_word: neura
+  stt:
+    model: small
+    language: vi
+    device: auto
+    compute_type: int8
+  tts:
+    voice: vi-VN-HoaiMyNeural
+    rate: +0%
+    volume: +0%
+safety:
+  require_confirmation:
+    - system.shutdown
+    - system.restart
+    - system.delete_file
+  blocked_tools: []
+  emergency_hotkey: ctrl+shift+f12
+ui:
+  show_overlay: true
+  avatar_enabled: false
